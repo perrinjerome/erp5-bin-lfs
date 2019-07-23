@@ -1,4 +1,4 @@
-/*global window, console, RSVP, document, URL, eval, XMLHttpRequest, marked */
+/*global window, console, RSVP, document, URL, eval, XMLHttpRequest, marked, WebAssembly, loadSharedlib */
 /*jslint nomen: true, indent: 2, maxerr: 3 */
 (function (window) {
   "use strict";
@@ -6,12 +6,15 @@
   var IODide = function createIODide() {
     return;
   },
-    JSMDCell = function createJSMDCell(type, line_list) {
+    JSMDCell = function createJSMDCell(type, line_list, option) {
       this._type = type;
       this._line_list = line_list;
+      this._option = option;
     },
+    is_pyodide_loaded = false,
+    pyodide_instance,
     split_line_regex = /[\r\n|\n|\r]/,
-    cell_type_regexp = /^\%\% (\w+)$/;
+    cell_type_regexp = /^\%\% (\w+)/;
 
   window.iodide = new IODide();
 
@@ -69,14 +72,22 @@
       len = line_list.length,
       current_line,
       current_type,
+      current_header,
       current_text_list,
+      option,
       next_type,
       cell_list = [];
 
     function pushNewCell() {
       if (current_type !== undefined) {
+        option = current_header.slice(current_type[0].length);
+        if (option === '') {
+          option = '{}';
+        }
+        option = JSON.parse(option);
+
         cell_list.push(new JSMDCell(current_type[1],
-                                      current_text_list));
+                                      current_text_list, option));
       }
     }
 
@@ -84,9 +95,10 @@
       current_line = line_list[i];
       next_type = current_line.match(cell_type_regexp);
       if (next_type) {
-        // New type detexted
+        // New type detected
         pushNewCell();
         current_type = next_type;
+        current_header = current_line;
         current_text_list = [];
       } else if (current_text_list !== undefined) {
         current_text_list.push(current_line);
@@ -253,13 +265,231 @@
     });
   }
 
+  function loadPyodide(imports, success_callback) {
+    return new RSVP.Queue()
+      .push(function () {
+        return ajax({
+          url: "pyodide.asm.wasm",
+          dataType: "arraybuffer"
+        });
+      })
+      .push(function (evt) {
+        // Compile and instantiate WebAssembly code.
+        // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/instantiate
+        return WebAssembly.instantiate(evt.target.response, imports);
+      })
+      .push(function (result) {
+        // This function act as instantiateWasm
+        // And in instantiateWasm, we have to call the second parameter
+        // See https://emscripten.org/docs/api_reference/module.html#Module.instantiateWasm
+        return success_callback(result.instance);
+      });
+  }
+
+  function checkABI(ABI_number) {
+    // This was needed by pyodide wasm module
+    if (ABI_number !== 1) {
+      throw new Error("Expect ABI number 1, got " + ABI_number);
+    }
+    return true;
+  }
+
+  // Pyodide package loading
+  function pyodideLoadPackage(names) {
+    var queue, toLoad, package_name, k,
+      subpackage, packages, loadedPackages, defer;
+    packages = pyodide_instance.packages.dependencies;
+    loadedPackages = pyodide_instance.loadedPackages;
+    // packages is dependency list of each package
+    // e.g.: [pandas: ['numpy', 'python-dateutil', 'pytz'], numpy: []]
+    queue = new Array(names);
+
+    toLoad = [];
+    defer = RSVP.defer();
+    // Find all packages that need to load, store in the "toLoad" list
+    while (queue.length) {
+      package_name = queue.pop();
+
+      if (loadedPackages.indexOf(package_name) === -1) {
+        toLoad.push(package_name);
+        // packages is the dependency list
+        if (packages.hasOwnProperty(package_name)) {
+          for (k = 0; k < packages[package_name].length; k += 1) {
+            subpackage = packages[package_name][k];
+            if (loadedPackages.indexOf(subpackage) === -1 && toLoad.indexOf(subpackage) === -1) {
+              queue.push(subpackage);
+            }
+          }
+        } else {
+          throw new Error("Unknown package " + package_name);
+        }
+      }
+    }
+
+    if (toLoad.length === 0) {
+      // No new packages to load
+      return;
+    }
+
+    // pyodide built with option "--use-preload-plugins"
+    // So emscripten load the pyodide itself and its extension using createPreloadedFile.
+    // See createPreloadedFile section in:
+    // https://github.com/emscripten-core/emscripten/blob/master/site/source/docs/api_reference/Filesystem-API.rst
+
+    // And createPreloadedFile use addRunDependency or removeRunDependency to handle the dependencies,
+    // it will call monitorRunDependencies.
+    // https://github.com/emscripten-core/emscripten/blob/master/src/preamble.js#L1842
+
+    // The logic in here is if we loaded all wasm module, aka the "left" is 0.
+    // We load all shared lib to the wasm file system through loadSharedlib.
+
+    pyodide_instance.monitorRunDependencies = function (left) {
+      if (left === 0) {
+        for (k = 0; k < toLoad.length; k += 1) {
+          package_name = toLoad[k];
+          loadedPackages.push(package_name);
+        }
+        delete pyodide_instance.monitorRunDependencies;
+        return loadSharedlib(pyodide_instance._module.FS)
+          .push(function () {
+            defer.resolve();
+            return;
+          });
+      }
+    };
+
+    for (k = 0; k < toLoad.length; k += 1) {
+      package_name = toLoad[k];
+      loadJSResource(package_name + ".js");
+    }
+
+    pyodide_instance.runPython('import importlib as _importlib\n' +
+      '_importlib.invalidate_caches()\n');
+    return defer.promise;
+  }
+
+  function initPyodide() {
+    var Module = {};
+
+    // perform the WebAssembly instantiation action
+    // See https://emscripten.org/docs/api_reference/module.html#Module.instantiateWasm
+    Module.instantiateWasm = loadPyodide;
+    Module.checkABI = checkABI;
+    window.Module = Module;
+
+    return RSVP.Queue()
+      .push(function () {
+        return loadJSResource('pyodide.asm.data.js');
+      })
+      .push(function () {
+        return loadJSResource('pyodide.asm.js');
+      })
+      .push(function () {
+        // pyodide is a function defined in pyodide.asm.js
+        // which set the functions under Module
+        pyodide_instance = window.pyodide(Module);
+        var defer = RSVP.defer();
+        // define postRun to resolve the promise
+        // When pyodide loading completed, it will call Module.postRun
+        // to signal the module loaded and ready for next step
+        // https://github.com/emscripten-core/emscripten/blob/1.38.10/src/preamble.js#L1602
+        // https://emscripten.org/docs/api_reference/preamble.js.html
+        Module.postRun = defer.resolve;
+        return defer.promise;
+      })
+      .push(function () {
+        return ajax({
+          url: 'packages.json'
+        });
+      })
+      .push(function (evt) {
+        return JSON.parse(evt.target.response);
+      })
+      .push(function (json) {
+        pyodide_instance._module = Module;
+        pyodide_instance.loadedPackages = [];
+        pyodide_instance._module.packages = json;
+        // Make pyodide happy...
+        // pyodide.asm.js need window.pyodide:
+        // https://github.com/iodide-project/pyodide/blob/master/src/runpython.c#L91
+        // var packageNames = self.pyodide._module.packages.import_name_to_package_name;
+        // import_name_to_package_name was defined when reading package.json
+        // https://github.com/iodide-project/pyodide/blob/master/pyodide_build/buildall.py#L58
+        window.pyodide = pyodide_instance;
+        return;
+      });
+  }
+
+  function renderCodeblock(result_text) {
+    var div = document.createElement('div'),
+      pre = document.createElement('pre'),
+      result = document.createElement('code');
+    div.classList.add('code-block');
+
+    if (result_text !== undefined) {
+      result.innerHTML = result_text;
+      pre.appendChild(result);
+      div.appendChild(pre);
+      document.body.appendChild(div);
+    }
+  }
+
+  function outputElement(node_type) {
+    var div, node;
+    div = document.createElement("div");
+    // iodide.output.element API allows user to define the node type
+    node = document.createElement(node_type);
+    div.append(node);
+    document.body.appendChild(div);
+    // div for insert in to the body
+    // node for return to the caller
+    return node;
+  }
+
+  // We provided window.pyodide, so matplotlib will use iodide.output.element as backend
+  // see: https://github.com/iodide-project/pyodide/blob/master/packages/matplotlib/src/wasm_backend.py#L108
+  // It is not related to addOutputHandler
+  window.iodide.output = {element: outputElement};
+
+  function executePyCell(line_list) {
+    var result, code_text = line_list.join('\n');
+    result = pyodide_instance.runPython(code_text);
+    renderCodeblock(result);
+  }
+
+  function executeCodeCell(line_list, option) {
+    if (option.language !== 'py') {
+      throw new Error('Unsupported code language: ' + option.language);
+    }
+
+    if (!is_pyodide_loaded) {
+      is_pyodide_loaded = true;
+      return initPyodide()
+        .push(function () {
+          return executePyCell(line_list);
+        })
+        .push(function () {
+          return pyodideLoadPackage('matplotlib');
+        });
+    }
+    return executePyCell(line_list);
+  }
+
   function executeCell(cell) {
-    if (cell._type === 'raw') {
+    if (cell._type === 'raw' || cell._type === 'meta' || cell._type === 'plugin') {
       // Do nothing...
       return;
     }
+    // The block "%% code" is for keep the compatibility with the legacy pyodide notebook
+    // New notebook suggest to use "%% py" directly
+    if (cell._type === 'code') {
+      return executeCodeCell(cell._line_list, cell._option);
+    }
     if (cell._type === 'js') {
       return executeJSCell(cell._line_list);
+    }
+    if (cell._type === 'py') {
+      return executeCodeCell(cell._line_list, {language: 'py'});
     }
     if (cell._type === 'resource') {
       return executeResourceCell(cell._line_list);
