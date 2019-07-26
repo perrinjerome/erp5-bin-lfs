@@ -1,0 +1,9 @@
+*.pyc
+*.pyo
+*.swp
+*~
+build/
+dist/
+bt5/bt5list
+TAGS
+tags
