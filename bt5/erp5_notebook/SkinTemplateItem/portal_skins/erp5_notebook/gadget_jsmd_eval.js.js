@@ -65,84 +65,6 @@
     });
   }
 
-  function parseJSMDCellList(jsmd) {
-    // Split the text into a list of Iodide cells
-    var line_list = jsmd.split(split_line_regex),
-      i,
-      len = line_list.length,
-      current_line,
-      current_type,
-      current_header,
-      current_text_list,
-      option,
-      next_type,
-      cell_list = [];
-
-    function pushNewCell() {
-      if (current_type !== undefined) {
-        option = current_header.slice(current_type[0].length);
-        if (option === '') {
-          option = '{}';
-        }
-        option = JSON.parse(option);
-
-        cell_list.push(new JSMDCell(current_type[1],
-                                      current_text_list, option));
-      }
-    }
-
-    for (i = 0; i < len; i += 1) {
-      current_line = line_list[i];
-      next_type = current_line.match(cell_type_regexp);
-      if (next_type) {
-        // New type detected
-        pushNewCell();
-        current_type = next_type;
-        current_header = current_line;
-        current_text_list = [];
-      } else if (current_text_list !== undefined) {
-        current_text_list.push(current_line);
-      }
-    }
-    // Push last cell
-    pushNewCell();
-    return cell_list;
-  }
-
-  function executeUnknownCellType(cell) {
-    throw new Error('Unsupported cell: ' + cell._type);
-  }
-
-  function executeJSCell(line_list) {
-    // console.info('eval', line_list);
-    var text = line_list.join('\n'),
-      pre,
-      br,
-      code;
-    try {
-      return eval.call(window, text);
-    } catch (e) {
-      console.error(e);
-      pre = document.createElement('pre');
-      pre.textContent = e.message;
-
-      br = document.createElement('br');
-      pre.appendChild(br);
-
-      code = document.createElement('code');
-      code.textContent = text;
-      pre.appendChild(code);
-      document.body.appendChild(pre);
-      throw e;
-    }
-  }
-
-  function executeCssCell(line_list) {
-    var style = document.createElement('style');
-    style.textContent = line_list.join('\n');
-    document.head.appendChild(style);
-  }
-
   function loadJSResource(url) {
     // Copied from renderJS
     return new RSVP.Promise(
@@ -162,107 +84,6 @@
         document.head.appendChild(newScript);
       }
     );
-  }
-
-  function deferJSResourceLoading(url) {
-    return function () {
-      return loadJSResource(url);
-    };
-  }
-
-  function loadCSSResource(url) {
-    // Copied from renderJS
-    return new RSVP.Promise(
-      function waitForCSSLoadEvent(resolve, reject) {
-        var link;
-        link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        link.href = url;
-        link.onload = resolve;
-        link.onerror = reject;
-        document.head.appendChild(link);
-      }
-    );
-  }
-
-  function deferCSSResourceLoading(url) {
-    return function () {
-      return loadCSSResource(url);
-    };
-  }
-
-  function loadTextResource(line) {
-    var line_split = line.split('=', 2),
-      variable = line_split[0],
-      url = line_split[1];
-    console.log(line_split);
-    return new RSVP.Queue()
-      .push(function () {
-        return ajax({url: url});
-      })
-      .push(function (evt) {
-        window[variable] = evt.target.responseText;
-      });
-  }
-
-  function deferTextResourceLoading(line) {
-    return function () {
-      return loadTextResource(line);
-    };
-  }
-
-  function executeResourceCell(line_list) {
-    var queue = new RSVP.Queue(),
-      len = line_list.length,
-      i;
-    for (i = 0; i < len; i += 1) {
-      if (line_list[i]) {
-        queue.push(deferJSResourceLoading(line_list[i]));
-      }
-    }
-    return queue;
-  }
-
-  function executeFetchCell(line_list) {
-    var queue = new RSVP.Queue(),
-      len = line_list.length,
-      i,
-      line;
-    for (i = 0; i < len; i += 1) {
-      line = line_list[i];
-      if (line) {
-        if (line.startsWith('js: ')) {
-          queue.push(deferJSResourceLoading(line.slice(4)));
-        } else if (line.startsWith('css: ')) {
-          queue.push(deferCSSResourceLoading(line.slice(5)));
-        } else if (line.startsWith('text: ')) {
-          queue.push(deferTextResourceLoading(line.slice(6)));
-        } else {
-          queue.cancel();
-          throw new Error('Unsupported fetch type: ' + line);
-        }
-      }
-    }
-    return queue;
-  }
-
-  function executeMarkdownCell(line_list) {
-    var renderer = new marked.Renderer();
-    return new RSVP.Promise(function (resolve, reject) {
-      marked(line_list.join('\n'),
-             {renderer: renderer},
-             function (err, content) {
-          if (err) {
-            reject(err);
-          }
-          var div = document.createElement('div');
-          div.classList.add('user-markdown');
-          div.innerHTML = content;
-          document.body.appendChild(div);
-          resolve();
-        });
-    });
   }
 
   function loadPyodide(imports, success_callback) {
@@ -418,6 +239,185 @@
         window.pyodide = pyodide_instance;
         return;
       });
+  }
+
+  function parseJSMDCellList(jsmd) {
+    // Split the text into a list of Iodide cells
+    var line_list = jsmd.split(split_line_regex),
+      i,
+      len = line_list.length,
+      current_line,
+      current_type,
+      current_header,
+      current_text_list,
+      option,
+      next_type,
+      cell_list = [];
+
+    function pushNewCell() {
+      if (current_type !== undefined) {
+        option = current_header.slice(current_type[0].length);
+        if (option === '') {
+          option = '{}';
+        }
+        option = JSON.parse(option);
+
+        cell_list.push(new JSMDCell(current_type[1],
+                                      current_text_list, option));
+      }
+    }
+
+    for (i = 0; i < len; i += 1) {
+      current_line = line_list[i];
+      next_type = current_line.match(cell_type_regexp);
+      if (next_type) {
+        // New type detected
+        pushNewCell();
+        current_type = next_type;
+        current_header = current_line;
+        current_text_list = [];
+      } else if (current_text_list !== undefined) {
+        current_text_list.push(current_line);
+      }
+    }
+    // Push last cell
+    pushNewCell();
+    return cell_list;
+  }
+
+  function executeUnknownCellType(cell) {
+    throw new Error('Unsupported cell: ' + cell._type);
+  }
+
+  function executeJSCell(line_list) {
+    // console.info('eval', line_list);
+    var text = line_list.join('\n'),
+      pre,
+      br,
+      code;
+    try {
+      return eval.call(window, text);
+    } catch (e) {
+      console.error(e);
+      pre = document.createElement('pre');
+      pre.textContent = e.message;
+
+      br = document.createElement('br');
+      pre.appendChild(br);
+
+      code = document.createElement('code');
+      code.textContent = text;
+      pre.appendChild(code);
+      document.body.appendChild(pre);
+      throw e;
+    }
+  }
+
+  function executeCssCell(line_list) {
+    var style = document.createElement('style');
+    style.textContent = line_list.join('\n');
+    document.head.appendChild(style);
+  }
+
+  function deferJSResourceLoading(url) {
+    return function () {
+      return loadJSResource(url);
+    };
+  }
+
+  function loadCSSResource(url) {
+    // Copied from renderJS
+    return new RSVP.Promise(
+      function waitForCSSLoadEvent(resolve, reject) {
+        var link;
+        link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = url;
+        link.onload = resolve;
+        link.onerror = reject;
+        document.head.appendChild(link);
+      }
+    );
+  }
+
+  function deferCSSResourceLoading(url) {
+    return function () {
+      return loadCSSResource(url);
+    };
+  }
+
+  function loadTextResource(line) {
+    var line_split = line.split('=', 2),
+      variable = line_split[0],
+      url = line_split[1];
+    console.log(line_split);
+    return new RSVP.Queue()
+      .push(function () {
+        return ajax({url: url});
+      })
+      .push(function (evt) {
+        window[variable] = evt.target.responseText;
+      });
+  }
+
+  function deferTextResourceLoading(line) {
+    return function () {
+      return loadTextResource(line);
+    };
+  }
+
+  function executeResourceCell(line_list) {
+    var queue = new RSVP.Queue(),
+      len = line_list.length,
+      i;
+    for (i = 0; i < len; i += 1) {
+      if (line_list[i]) {
+        queue.push(deferJSResourceLoading(line_list[i]));
+      }
+    }
+    return queue;
+  }
+
+  function executeFetchCell(line_list) {
+    var queue = new RSVP.Queue(),
+      len = line_list.length,
+      i,
+      line;
+    for (i = 0; i < len; i += 1) {
+      line = line_list[i];
+      if (line) {
+        if (line.startsWith('js: ')) {
+          queue.push(deferJSResourceLoading(line.slice(4)));
+        } else if (line.startsWith('css: ')) {
+          queue.push(deferCSSResourceLoading(line.slice(5)));
+        } else if (line.startsWith('text: ')) {
+          queue.push(deferTextResourceLoading(line.slice(6)));
+        } else {
+          queue.cancel();
+          throw new Error('Unsupported fetch type: ' + line);
+        }
+      }
+    }
+    return queue;
+  }
+
+  function executeMarkdownCell(line_list) {
+    var renderer = new marked.Renderer();
+    return new RSVP.Promise(function (resolve, reject) {
+      marked(line_list.join('\n'),
+             {renderer: renderer},
+             function (err, content) {
+          if (err) {
+            reject(err);
+          }
+          var div = document.createElement('div');
+          div.classList.add('user-markdown');
+          div.innerHTML = content;
+          document.body.appendChild(div);
+          resolve();
+        });
+    });
   }
 
   function renderCodeblock(result_text) {
