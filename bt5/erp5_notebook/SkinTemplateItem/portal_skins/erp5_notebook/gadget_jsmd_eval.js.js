@@ -237,6 +237,7 @@
         // import_name_to_package_name was defined when reading package.json
         // https://github.com/iodide-project/pyodide/blob/master/pyodide_build/buildall.py#L58
         window.pyodide = pyodide_instance;
+        window.pyodide.loadPackage = pyodideLoadPackage;
         return;
       });
   }
@@ -296,6 +297,15 @@
       br,
       code;
     try {
+      // In order to load Python package,
+      // we have to initialize pyodide first
+      if (text.includes('loadPackage') && !is_pyodide_loaded) {
+        is_pyodide_loaded = true;
+        return initPyodide()
+          .push(function () {
+            return eval.call(window, text);
+          });
+      }
       return eval.call(window, text);
     } catch (e) {
       console.error(e);
