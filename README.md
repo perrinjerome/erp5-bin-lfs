@@ -1,7 +1,10 @@
 # Purpose
 
 This repository is used for put the business template which not suitable to put
-in the main nexedi/erp5 repository, such as large files(exceeds 100 MB).
+in the main nexedi/erp5 repository, such as files generated as a result of
+compilation (for example: python modules compiled as web assembly) or large
+files that would prevent mirroring on github (because github refuses git
+objects larger than 100MB).
 
 SlapOS was configured to use erp5-bin as external repository:
 https://lab.nexedi.com/nexedi/slapos/blob/master/stack/erp5/buildout.cfg#L346
