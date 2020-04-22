@@ -7,7 +7,7 @@
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -38,7 +38,7 @@ CREATE TABLE `accounting_transaction` (
   `total_credit` double DEFAULT NULL,
   PRIMARY KEY (`uid`,`order_id`),
   KEY `section_uid` (`section_uid`,`mirror_section_uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -61,7 +61,7 @@ CREATE TABLE `alarm` (
   `uid` bigint(20) unsigned NOT NULL,
   `alarm_date` datetime DEFAULT NULL,
   PRIMARY KEY (`uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +104,7 @@ CREATE TABLE `catalog` (
   `payment_state` varchar(255) DEFAULT '',
   `event_state` varchar(255) DEFAULT '',
   `immobilisation_state` varchar(255) DEFAULT '',
-  `reference` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '',
+  `reference` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '',
   `grouping_reference` varchar(255) DEFAULT '',
   `grouping_date` datetime DEFAULT NULL,
   `source_reference` varchar(255) DEFAULT '',
@@ -133,7 +133,7 @@ CREATE TABLE `catalog` (
   KEY `invoice_state` (`invoice_state`),
   KEY `payment_state` (`payment_state`),
   KEY `event_state` (`event_state`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -160,7 +160,7 @@ CREATE TABLE `catalog_full_text` (
   PRIMARY KEY (`uid`),
   FULLTEXT KEY `title` (`title`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"',
   FULLTEXT KEY `description` (`description`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
-) ENGINE=Mroonga DEFAULT CHARSET=utf8mb4;
+) ENGINE=Mroonga DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -186,7 +186,7 @@ CREATE TABLE `category` (
   `category_strict_membership` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`uid`,`category_uid`,`base_category_uid`,`category_strict_membership`),
   KEY `Membership` (`category_uid`,`base_category_uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -213,7 +213,7 @@ CREATE TABLE `content_translation` (
   `translated_text` text DEFAULT NULL,
   PRIMARY KEY (`uid`,`property_name`,`content_language`),
   FULLTEXT KEY `translated_text` (`translated_text`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
-) ENGINE=Mroonga DEFAULT CHARSET=utf8mb4;
+) ENGINE=Mroonga DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -252,7 +252,7 @@ CREATE TABLE `delivery` (
   KEY `destination_section_uid` (`destination_section_uid`),
   KEY `resource_uid` (`resource_uid`),
   KEY `start_date` (`start_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -277,7 +277,7 @@ CREATE TABLE `full_text` (
   `SearchableText` mediumtext DEFAULT NULL,
   PRIMARY KEY (`uid`),
   FULLTEXT KEY `SearchableText` (`SearchableText`) COMMENT 'parser "TokenBigramSplitSymbolAlphaDigit"'
-) ENGINE=Mroonga DEFAULT CHARSET=utf8mb4;
+) ENGINE=Mroonga DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -313,7 +313,7 @@ CREATE TABLE `item` (
   KEY `variation_text` (`variation_text`),
   KEY `aggregate_simulation_state_date` (`aggregate_uid`,`simulation_state`,`date`),
   KEY `node_simulation_state_date` (`node_uid`,`simulation_state`,`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -340,7 +340,7 @@ CREATE TABLE `measure` (
   `quantity` double NOT NULL,
   PRIMARY KEY (`uid`,`variation`),
   KEY `metric_type_uid` (`metric_type_uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -383,7 +383,7 @@ CREATE TABLE `message` (
   KEY `active_process_uid` (`active_process_uid`),
   KEY `method_id` (`method_id`),
   KEY `tag` (`tag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -424,7 +424,7 @@ CREATE TABLE `message_job` (
   KEY `active_process_uid` (`active_process_uid`),
   KEY `method_id` (`method_id`),
   KEY `tag` (`tag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -467,7 +467,7 @@ CREATE TABLE `message_queue` (
   KEY `active_process_uid` (`active_process_uid`),
   KEY `method_id` (`method_id`),
   KEY `tag` (`tag`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -490,7 +490,7 @@ CREATE TABLE `portal_ids` (
   `id_group` varbinary(255) NOT NULL,
   `last_id` bigint(20) unsigned DEFAULT NULL,
   PRIMARY KEY (`id_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -519,7 +519,7 @@ CREATE TABLE `predicate` (
   `start_date_range_min` datetime DEFAULT NULL,
   `start_date_range_max` datetime DEFAULT NULL,
   PRIMARY KEY (`uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -547,7 +547,7 @@ CREATE TABLE `predicate_category` (
   PRIMARY KEY (`uid`,`category_uid`,`base_category_uid`,`category_strict_membership`),
   KEY `category_strict_membership` (`category_strict_membership`),
   KEY `Membership` (`category_uid`,`base_category_uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -574,7 +574,7 @@ CREATE TABLE `quantity_unit_conversion` (
   `quantity` double NOT NULL,
   PRIMARY KEY (`resource_uid`,`quantity_unit_uid`),
   KEY `uid` (`uid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -602,7 +602,7 @@ CREATE TABLE `record` (
   PRIMARY KEY (`uid`),
   KEY `played` (`played`),
   KEY `date` (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -626,7 +626,7 @@ CREATE TABLE `roles_and_users` (
   `allowedRolesAndUsers` varchar(255) DEFAULT NULL,
   KEY `uid` (`uid`),
   KEY `allowedRolesAndUsers` (`allowedRolesAndUsers`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -687,7 +687,7 @@ CREATE TABLE `stock` (
   KEY `resource_node_uid` (`resource_uid`,`node_uid`),
   KEY `resource_section_node_uid` (`resource_uid`,`section_uid`,`node_uid`,`simulation_state`),
   KEY `date` (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -711,7 +711,7 @@ CREATE TABLE `subject` (
   `subject` varchar(255) DEFAULT NULL,
   KEY `subject_set_uid` (`subject_set_uid`),
   KEY `subject` (`subject`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -738,7 +738,7 @@ CREATE TABLE `transformation` (
   `quantity` double DEFAULT NULL,
   KEY `resource` (`uid`,`variation_text`),
   KEY `transformed_resource` (`transformed_uid`,`transformed_variation_text`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -766,7 +766,7 @@ CREATE TABLE `translation` (
   KEY `message` (`translated_message`),
   KEY `original_message` (`original_message`),
   KEY `type_translated_message` (`portal_type`,`translated_message`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -788,10 +788,10 @@ DROP TABLE IF EXISTS `user`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user` (
   `uid` bigint(20) unsigned NOT NULL,
-  `user_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '',
+  `user_id` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT '',
   PRIMARY KEY (`uid`),
   KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -827,7 +827,7 @@ CREATE TABLE `versioning` (
   KEY `effective_date` (`effective_date`),
   KEY `expiration_date` (`expiration_date`),
   KEY `frequency_index` (`creation_date_index`,`frequency_index`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
