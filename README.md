@@ -7,9 +7,9 @@ files that would prevent mirroring on github (because github refuses git
 objects larger than 100MB).
 
 SlapOS was configured to use erp5-bin as external repository:
-https://lab.nexedi.com/nexedi/slapos/blob/master/stack/erp5/buildout.cfg#L346
+https://lab.nexedi.com/nexedi/slapos/blob/d1bd018c/stack/erp5/buildout.cfg#L346
 
-So this external library was managed by SlapOS. Updating work also done by SlaOS.
+So this external library was managed by SlapOS. Updating work also done by SlapOS.
 
 # Submodule
 
