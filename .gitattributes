@@ -1,1 +1,2 @@
 /bt5/erp5_notebook/SkinTemplateItem/portal_skins/erp5_notebook/scipy.data.bin filter=lfs diff=lfs merge=lfs -text
+/test_data/testUpgradeInstanceWithOldDataFs/Data.fs filter=lfs diff=lfs merge=lfs -text
