@@ -518,7 +518,17 @@
 
   function deferCellExecution(cell) {
     return function () {
-      return executeCell(cell);
+      return new RSVP.Queue()
+        .push(function () {
+          return executeCell(cell);
+        })
+        .push(undefined, function (error) {
+          //errors in cell execution must be part of the notebook result
+          //notebook execution must continue
+          var pre = document.createElement('pre');
+          pre.textContent = error;
+          document.body.appendChild(pre);
+        });
     };
   }
 
