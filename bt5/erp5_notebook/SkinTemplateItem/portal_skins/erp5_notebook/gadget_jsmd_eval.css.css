@@ -5,3 +5,60 @@ div.code-block {
   margin: 40px 10px;
   padding-left: 10px;
 }
+
+html {
+  font-family: sans-serif;
+  line-height: 1.15;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Roboto", Arial, sans-serif;
+}
+
+h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+h2 {
+  font-weight: normal;
+  font-size: 25px;
+  line-height: 33px;
+  margin-top: 1em;
+}
+
+h3 {
+  margin-top: .5em;
+}
+
+p, li, span {
+  font-family: 'Heuristica', 'Helvetica', Times, serif;
+}
+
+p, li, ul {
+  font-size: 16px;
+  line-height: 18px;
+}
+
+pre {
+  white-space: normal;
+  word-wrap: break-word;
+  font-size: 1em;
+}
+
+code {
+  font-family: monospace;
+  white-space: normal;
+  word-wrap: break-word;
+  color: #444;
+  font-size: 1em;
+}
+
+pre, code, code span {
+  font-family: "Courier New", Courier, monospace, sans-serif;
+}
+
+code span {
+  font-size: .9em;
+  font-family: "Courier New", Courier, monospace, sans-serif;
+}
