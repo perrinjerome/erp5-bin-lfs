@@ -32,3 +32,36 @@ iframe {
   margin: 0;
   padding: 0;
 }
+
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('font-awesome/font-awesome-webfont.eot');
+  src: url('font-awesome/font-awesome-webfont.eot') format('embedded-opentype'), url('font-awesome/font-awesome-webfont.woff2') format('woff2'), url('font-awesome/font-awesome-webfont.woff') format('woff'), url('font-awesome/font-awesome-webfont.ttf') format('truetype'), url('font-awesome/font-awesome-webfont.svg') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.nb-ui-icon-spinner {
+  opacity: 1;
+  margin: 10px;
+  margin-top: 25px;
+}
+
+.nb-ui-icon-spinner::before {
+  font-family: FontAwesome;
+  content: "\f110";
+  animation: spin 0.5s infinite linear;
+  margin-right: 5px;
+}
+
+nb-loader {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  font-size: 300%;
+  animation-name: fadein;
+  animation-duration: 0.2s;
+  animation-delay: 0.3s;
+  animation-fill-mode: both;
+  animation-timing-function: ease-in;
+}

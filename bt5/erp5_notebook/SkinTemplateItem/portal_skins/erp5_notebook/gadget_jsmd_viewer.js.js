@@ -1,5 +1,5 @@
 /*global window, rJS, console, RSVP, jIO, DOMParser, Blob, document,
-         URL, loopEventListener */
+         URL, loopEventListener, promiseEventListener */
 /*jslint nomen: true, indent: 2, maxerr: 3 */
 (function (window, rJS, RSVP, jIO, DOMParser, document, URL,
            loopEventListener) {
@@ -47,12 +47,19 @@
 
           // Insert the JSMD value inside the HTML
           var script = document.createElement('script'),
-            iframe = document.createElement("iframe");
+            iframe = document.createElement("iframe"),
+            loading_spinner = document.createElement("div");
 
           script.setAttribute('type', 'text/x-jsmd');
           script.setAttribute('id', 'jsmd-source');
           script.textContent = gadget.state.value;
           doc.head.appendChild(script);
+
+          loading_spinner.setAttribute('id', 'js-spinner');
+          loading_spinner.classList.add("nb-ui-icon-spinner");
+          loading_spinner.classList.add("nb-ui-btn-icon-notext");
+          loading_spinner.classList.add("nb-loader");
+          loading_spinner.innerHTML = "Loading notebook...";
 
 /*
           blob = new Blob([doc.documentElement.outerHTML],
@@ -67,7 +74,24 @@
           // iframe.setAttribute("src", evt.target.result);
           iframe.setAttribute("srcdoc", doc.documentElement.outerHTML);
           gadget.element.innerHTML = iframe.outerHTML;
+          gadget.element.prepend(loading_spinner);
           gadget.listenResize();
+          gadget.listenMessage();
+        });
+    })
+
+    .declareJob('listenMessage', function () {
+      var gadget = this;
+      return new RSVP.Queue()
+        .push(function () {
+          return promiseEventListener(window, "message", true);
+        })
+        .push(function (event) {
+          //only handle jsmd eval child messages
+          if ((event.origin !== window.origin) || (event.data !== "jsmd_eval_done"))
+            return gadget.listenMessage();
+          console.log("JSMD Eval Done.");
+          document.querySelector('[id="js-spinner"]').remove();
         });
     })
 
@@ -82,4 +106,4 @@
       return loopEventListener(window, 'resize', false, resize);
     });
 
-}(window, rJS, RSVP, jIO, DOMParser, document, URL, loopEventListener));
+}(window, rJS, RSVP, jIO, DOMParser, document, URL, loopEventListener, promiseEventListener));

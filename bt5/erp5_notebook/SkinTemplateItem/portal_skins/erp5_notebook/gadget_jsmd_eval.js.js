@@ -552,6 +552,9 @@
         var pre = document.createElement('pre');
         pre.textContent = error;
         document.body.appendChild(pre);
+      })
+      .push(function () {
+        window.parent.postMessage("jsmd_eval_done", window.origin);
       });
 
   }, false);
