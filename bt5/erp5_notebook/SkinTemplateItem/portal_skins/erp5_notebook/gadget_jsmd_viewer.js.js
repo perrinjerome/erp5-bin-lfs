@@ -1,5 +1,5 @@
 /*global window, rJS, console, RSVP, jIO, DOMParser, Blob, document,
-         URL, loopEventListener, promiseEventListener */
+         URL, loopEventListener */
 /*jslint nomen: true, indent: 2, maxerr: 3 */
 (function (window, rJS, RSVP, jIO, DOMParser, document, URL,
            loopEventListener) {
@@ -24,6 +24,10 @@
   }
 
   rJS(window)
+
+    .ready(function (gadget) {
+      gadget.property_dict = {};
+    })
     /////////////////////////////////////////////////////////////////
     // declared methods
     /////////////////////////////////////////////////////////////////
@@ -38,6 +42,7 @@
       var gadget = this,
         base_url = document.location.toString(),
         doc;
+      gadget.property_dict.deferred = RSVP.defer();
 
       return fetchHTML("gadget_jsmd_eval.html", base_url)
         .push(function (result) {
@@ -80,19 +85,33 @@
         });
     })
 
-    .declareJob('listenMessage', function () {
-      var gadget = this;
+    .declareMethod('getContent', function () {
+      var gadget = this,
+        content_dict = {},
+        dict = gadget.property_dict;
       return new RSVP.Queue()
         .push(function () {
-          return promiseEventListener(window, "message", true);
+          return dict.deferred.promise;
         })
-        .push(function (event) {
+        .push(function () {
+          content_dict[gadget.state.key] = gadget.element.querySelector("iframe")
+            .contentDocument.firstChild.innerHTML;
+          return content_dict;
+        });
+    })
+
+    .declareJob('listenMessage', function () {
+      var gadget = this,
+        dict = gadget.property_dict;
+      return loopEventListener(window, 'message', false, function (event) {
           //only handle jsmd eval child messages
           if ((event.origin !== window.origin) || (event.data !== "jsmd_eval_done"))
-            return gadget.listenMessage();
+            return;
           console.log("JSMD Eval Done.");
           document.querySelector('[id="js-spinner"]').remove();
-        });
+          return dict.deferred.resolve();
+        }
+      );
     })
 
     .declareJob('listenResize', function () {
@@ -106,4 +125,4 @@
       return loopEventListener(window, 'resize', false, resize);
     });
 
-}(window, rJS, RSVP, jIO, DOMParser, document, URL, loopEventListener, promiseEventListener));
+}(window, rJS, RSVP, jIO, DOMParser, document, URL, loopEventListener));
