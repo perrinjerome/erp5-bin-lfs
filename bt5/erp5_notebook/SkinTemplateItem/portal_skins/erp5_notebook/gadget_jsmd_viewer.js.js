@@ -24,6 +24,10 @@
   }
 
   rJS(window)
+
+    .ready(function (gadget) {
+      gadget.property_dict = {};
+    })
     /////////////////////////////////////////////////////////////////
     // declared methods
     /////////////////////////////////////////////////////////////////
@@ -38,6 +42,7 @@
       var gadget = this,
         base_url = document.location.toString(),
         doc;
+      gadget.property_dict.deferred = RSVP.defer();
 
       return fetchHTML("gadget_jsmd_eval.html", base_url)
         .push(function (result) {
@@ -47,12 +52,19 @@
 
           // Insert the JSMD value inside the HTML
           var script = document.createElement('script'),
-            iframe = document.createElement("iframe");
+            iframe = document.createElement("iframe"),
+            loading_spinner = document.createElement("div");
 
           script.setAttribute('type', 'text/x-jsmd');
           script.setAttribute('id', 'jsmd-source');
           script.textContent = gadget.state.value;
           doc.head.appendChild(script);
+
+          loading_spinner.setAttribute('id', 'js-spinner');
+          loading_spinner.classList.add("nb-ui-icon-spinner");
+          loading_spinner.classList.add("nb-ui-btn-icon-notext");
+          loading_spinner.classList.add("nb-loader");
+          loading_spinner.innerHTML = "Loading notebook...";
 
 /*
           blob = new Blob([doc.documentElement.outerHTML],
@@ -67,8 +79,39 @@
           // iframe.setAttribute("src", evt.target.result);
           iframe.setAttribute("srcdoc", doc.documentElement.outerHTML);
           gadget.element.innerHTML = iframe.outerHTML;
+          gadget.element.prepend(loading_spinner);
           gadget.listenResize();
+          gadget.listenMessage();
         });
+    })
+
+    .declareMethod('getContent', function () {
+      var gadget = this,
+        content_dict = {},
+        dict = gadget.property_dict;
+      return new RSVP.Queue()
+        .push(function () {
+          return dict.deferred.promise;
+        })
+        .push(function () {
+          content_dict[gadget.state.key] = gadget.element.querySelector("iframe")
+            .contentDocument.firstChild.innerHTML;
+          return content_dict;
+        });
+    })
+
+    .declareJob('listenMessage', function () {
+      var gadget = this,
+        dict = gadget.property_dict;
+      return loopEventListener(window, 'message', false, function (event) {
+          //only handle jsmd eval child messages
+          if ((event.origin !== window.origin) || (event.data !== "jsmd_eval_done"))
+            return;
+          console.log("JSMD Eval Done.");
+          document.querySelector('[id="js-spinner"]').remove();
+          return dict.deferred.resolve();
+        }
+      );
     })
 
     .declareJob('listenResize', function () {
