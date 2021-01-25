@@ -77,6 +77,8 @@
           iframe.setAttribute("sandbox", "allow-scripts allow-same-origin");
           // iframe.setAttribute("csp", "default-src *; script-src * 'unsafe-inline';");
           // iframe.setAttribute("src", evt.target.result);
+          iframe.setAttribute('id', 'jsmd_eval_notebook');
+          iframe.setAttribute('name', 'jsmd_eval_notebook');
           iframe.setAttribute("srcdoc", doc.documentElement.outerHTML);
           gadget.element.innerHTML = iframe.outerHTML;
           gadget.element.prepend(loading_spinner);
