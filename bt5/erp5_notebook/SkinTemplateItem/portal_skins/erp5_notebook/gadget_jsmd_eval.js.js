@@ -1,6 +1,6 @@
-/*global window, console, RSVP, document, URL, eval, XMLHttpRequest, marked, WebAssembly, loadSharedlib */
+/*global window, document, rJS, RSVP, XMLHttpRequest, WebAssembly, loadSharedlib, marked, console */
 /*jslint nomen: true, indent: 2, maxerr: 3 */
-(function (window) {
+(function (window, document, rJS, RSVP, XMLHttpRequest, WebAssembly, loadSharedlib, marked, console) {
   "use strict";
 
   var IODide = function createIODide() {
@@ -532,31 +532,31 @@
     };
   }
 
+  rJS(window)
 
-  document.addEventListener('DOMContentLoaded', function () {
+    .declareMethod("render", function (options) {
+      return this.changeState(options);
+    })
 
-    var jsmd = document.querySelector('[type="text/x-jsmd"]').textContent,
-      cell_list = parseJSMDCellList(jsmd),
-      len = cell_list.length,
-      i,
-      queue = new RSVP.Queue();
+    .onStateChange(function (options) {
+      var gadget = this,
+        jsmd = options.jsmd_code,
+        cell_list = parseJSMDCellList(jsmd),
+        len = cell_list.length,
+        i,
+        queue = new RSVP.Queue();
+      for (i = 0; i < len; i += 1) {
+        queue.push(deferCellExecution(cell_list[i]));
+      }
+      return queue
+        .push(function () {
+          console.info('JSMD executed.');
+        }, function (error) {
+          console.error(error);
+          var pre = document.createElement('pre');
+          pre.textContent = error;
+          document.body.appendChild(pre);
+        });
+    });
 
-    for (i = 0; i < len; i += 1) {
-      queue.push(deferCellExecution(cell_list[i]));
-    }
-    return queue
-      .push(function () {
-        console.info('JSMD executed.');
-      }, function (error) {
-        console.error(error);
-        var pre = document.createElement('pre');
-        pre.textContent = error;
-        document.body.appendChild(pre);
-      })
-      .push(function () {
-        window.parent.postMessage("jsmd_eval_done", window.origin);
-      });
-
-  }, false);
-
-}(window));
+}(window, document, rJS, RSVP, XMLHttpRequest, WebAssembly, loadSharedlib, marked, console));
